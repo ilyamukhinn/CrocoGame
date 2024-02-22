@@ -1,0 +1,4 @@
+/.venv
+/users_settings.db
+__pycache__/
+/.env
