@@ -20,7 +20,7 @@ from aiogram.types.message import ContentType
 from aiogram_dialog import setup_dialogs
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="6544350786:AAEdwfh5XrFV3AqBd2p-tUDKNXX0i5nG7Fo")
+bot = Bot(token=config.bot_token.get_secret_value())
 print(config.bot_token.get_secret_value())
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
