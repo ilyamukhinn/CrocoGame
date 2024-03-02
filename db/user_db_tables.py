@@ -30,16 +30,18 @@ class CategoryTable:
 
     fields_names_list: list[str] = [category_id_field_name, category_name_field_name]
 
-    base_data: dict[categories.Category, int] = {
+    base_data: dict[categories.categories_types, int] = {
         categories.Films: 1,
         categories.People: 2,
         categories.Books: 3,
+        categories.Statements: 4,
     }
 
-    base_data_inverted: dict[int, categories.Category] = {
+    base_data_inverted: dict[int, categories.categories_types] = {
         1: categories.Films,
         2: categories.People,
         3: categories.Books,
+        4: categories.Statements
     }
 
 

@@ -22,6 +22,17 @@ def record_exists(
     )
     return cur.fetchone()[0] == 1
 
+def _record_exists(
+    conn: sqlite3.Connection, query: str, parameters
+) -> bool:
+    cur = conn.cursor()
+    
+    cur.execute(
+        query,
+        parameters
+    )
+    return cur.fetchone()[0] == 1
+
 
 def create_talbe(
     conn: sqlite3.Connection, fields: dict[str, str], table_name: str
@@ -154,3 +165,4 @@ class DBInterface:
     select_record = staticmethod(select_record)
     select_records = staticmethod(select_records)
     update_record_and_operator = staticmethod(update_record_and_operator)
+    _record_exists = staticmethod(_record_exists)

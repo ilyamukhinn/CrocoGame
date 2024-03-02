@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, Any
 import sqlite3
 
@@ -10,10 +11,10 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Checkbox, Start, Row, Cancel
 
 from db import main_db_interface, user_db_tables
-from handlers import update_categories_settings_menu_handler
+from handlers import card_settings_menu
 
 router = Router()
-router.include_router(update_categories_settings_menu_handler.router)
+router.include_router(card_settings_menu.router)
 
 
 class Settings(StatesGroup):
@@ -61,8 +62,14 @@ async def save_main_settings(
         [1 if dialog_manager.find(ROLL_DICE_BTN_ID).is_checked() else 0],
         user_db_tables.UserTable.table_name,
     )
-    await callback.message.answer("Настройки сохранены!")
+    dump = await callback.message.answer("Настройки сохранены!")
+    await callback.answer()
 
+    await asyncio.sleep(5)
+    try:
+        await dump.delete()
+    except Exception as e:
+        pass
 
 settings = Dialog(
     Window(
@@ -84,12 +91,12 @@ settings = Dialog(
         Start(
             Const("Настройки карточки"),
             id=CARD_SETTINGS_BTN_ID,
-            state=update_categories_settings_menu_handler.UpdateCardSettings.START,
+            state=card_settings_menu.UpdateCardSettings.START
         ),
         Row(
-            Cancel(),
+            Cancel(text=Const("Выход")),
             Cancel(
-                text=Const("Save"), id=SAVE_SETTINGS_BTN_ID, on_click=save_main_settings
+                text=Const("Сохранить"), id=SAVE_SETTINGS_BTN_ID, on_click=save_main_settings
             ),
         ),
         state=Settings.START,

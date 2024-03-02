@@ -13,10 +13,12 @@ from aiogram_dialog import DialogManager
 
 from middlewares import long_operation_action_middlware
 from keyboards import main_menu_reply_keyboard
-from handlers import update_settings_menu_handler
+from handlers import settings_menu
+
+from config_reader import config
 
 router = Router()
-router.include_routers(update_settings_menu_handler.router)
+router.include_routers(settings_menu.router)
 router.callback_query.outer_middleware(
     long_operation_action_middlware.ChatActionMiddleware()
 )
@@ -86,7 +88,7 @@ async def cmd_start(message: types.Message):
 
 
 @router.message(
-    F.text.lower() == "получить карточку", flags={"long_operation": "typing"}
+    F.text.lower() == "получить карточку 🃏", flags={"long_operation": "typing"}
 )
 @router.message(Command("get_card"), flags={"long_operation": "typing"})
 async def cmd_get_game_card(
@@ -94,6 +96,7 @@ async def cmd_get_game_card(
     films: categories.Films,
     people: categories.People,
     books: categories.Books,
+    statements: categories.Statements
 ):
     card_data: dict[str, any] = card.Card.generate_card(
         message.from_user.id,
@@ -101,6 +104,7 @@ async def cmd_get_game_card(
             films.CATEGORY_NAME_ENG: films,
             people.CATEGORY_NAME_ENG: people,
             books.CATEGORY_NAME_ENG: books,
+            statements.CATEGORY_NAME_ENG: statements,
         },
     )
     await message.answer(text=card_data[card.Card.card_text_field_name])
@@ -108,28 +112,25 @@ async def cmd_get_game_card(
         await message.answer_dice(emoji=DiceEmoji.DICE)
 
 
-@router.message(F.text.lower() == "настройки")
+@router.message(F.text.lower() == "настройки ⚙️")
 @router.message(Command("settings"))
 async def cmd_settings(message: types.Message, dialog_manager: DialogManager):
-    await dialog_manager.start(update_settings_menu_handler.Settings.START)
+    await dialog_manager.start(settings_menu.Settings.START)
 
+@router.message(F.text.lower() == "бросить кубик 🎲")
+async def cmd_settings(message: types.Message, dialog_manager: DialogManager):
+    await message.answer_dice(emoji=DiceEmoji.DICE)
 
-@router.message(F.text.lower() == "помощь")
+@router.message(F.text.lower() == "помощь ℹ️")
 @router.message(Command("help"))
 async def cmd_help(message: types.Message):
     await message.answer(text="Здесь будет справка о приложении")
 
 
-@router.message(F.text.lower() == "правила игры")
+@router.message(F.text.lower() == "правила игры ⚖️")
 @router.message(Command("rules"))
 async def cmd_rules(message: types.Message):
     await message.answer(text="Здесь будет справка о правилах игры")
-
-
-@router.message(F.text.lower() == "поддержите разработчиков")
-@router.message(Command("donate"))
-async def cmd_donate(message: types.Message):
-    await message.answer(text="Здесь будет ссылка на донат")
 
 
 @router.message(F.text)
