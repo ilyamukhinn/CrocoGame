@@ -1,5 +1,4 @@
 import random
-from typing import Union
 import os
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -74,3 +73,4 @@ class Statements:
 
 
 categories_types = [Films, People, Books, Statements]
+_categories_types = Films | People | Books | Statements

@@ -1,13 +1,5 @@
-from typing import Any
 import categories
-from handlers.categories import settings_category_amount_change
-from handlers.categories.category_settings import CategorySettingsCreator, CategorySettings
-
-from aiogram import types
-
-from aiogram_dialog import DialogManager, ChatEvent
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.kbd import Button, Checkbox, ManagedCheckbox
+from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 
 class PeopleSettingsCreator(CategorySettingsCreator):

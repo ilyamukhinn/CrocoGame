@@ -5,6 +5,7 @@ import os
 
 import categories
 from db import main_db_interface, user_db_tables
+from db.mongo import mongo_db_manager
 
 from handlers import (
     main_menu_keyboard,
@@ -21,7 +22,6 @@ from aiogram_dialog import setup_dialogs
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
-print(config.bot_token.get_secret_value())
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 dp["films"] = categories.Films()
@@ -29,6 +29,15 @@ dp["people"] = categories.People()
 dp["books"] = categories.Books()
 dp["statements"] = categories.Statements()
 
+def _create_db() -> None:
+    mongo_db_manager.DBManager().create_films_collection()
+    mongo_db_manager.DBManager().create_books_collection()
+    mongo_db_manager.DBManager().create_statements_collection()
+    mongo_db_manager.DBManager().create_characters_collection()
+
+    mongo_db_manager.DBManager().create_categories_collection()
+    mongo_db_manager.DBManager().get_films_sample(3)
+    
 
 def create_db() -> None:
     conn = sqlite3.connect(user_db_tables.user_db_path)
@@ -118,5 +127,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    _create_db()
     create_db()
     asyncio.run(main())

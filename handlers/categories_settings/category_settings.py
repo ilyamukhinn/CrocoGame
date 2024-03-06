@@ -2,10 +2,6 @@ from __future__ import annotations
 from typing import Any
 from abc import ABC, abstractmethod
 
-from typing import Any
-import categories
-from handlers.categories import settings_category_amount_change
-
 from aiogram import types
 
 from aiogram_dialog import DialogManager, ChatEvent
@@ -13,15 +9,31 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Checkbox, ManagedCheckbox
 
 class CategorySettingsCreator(ABC):
+    words_amount_key = "words_amount"
+
     @abstractmethod
     def factory_method(self):
         pass
+
+    def amount_changed(
+        self, button: Button, dialog_manager: DialogManager,
+        button_minus_id: str, button_plus_id: str, check_button_id: str,
+        amount_key: str
+    ):
+        if button.widget_id == button_minus_id and dialog_manager.dialog_data[amount_key] != 0:
+            dialog_manager.dialog_data[amount_key] -= 1
+            if dialog_manager.find(check_button_id).is_checked():
+                dialog_manager.dialog_data[self.words_amount_key] -= 1
+        if button.widget_id == button_plus_id and dialog_manager.dialog_data[amount_key] != 6:
+            dialog_manager.dialog_data[amount_key] += 1
+            if dialog_manager.find(check_button_id).is_checked():
+                dialog_manager.dialog_data[self.words_amount_key] += 1
 
     async def category_amount_changed(
         self, callback: types.CallbackQuery, button: Button, dialog_manager: DialogManager
     ):
         category = self.factory_method()
-        settings_category_amount_change.amount_changed(
+        self.amount_changed(
             button, dialog_manager, 
             category.get_minus_btn_id(), category.get_plus_btn_id(), category.get_card_settings_check_btn_id(),
             category.get_amount_key())
@@ -32,10 +44,10 @@ class CategorySettingsCreator(ABC):
         self, event: ChatEvent, checkbox: ManagedCheckbox, dialog_manager: DialogManager
     ):
         if checkbox.is_checked():
-            dialog_manager.dialog_data[settings_category_amount_change.words_amount_key] += \
+            dialog_manager.dialog_data[self.words_amount_key] += \
                 self.get_category_amount(dialog_manager)
         else:
-            dialog_manager.dialog_data[settings_category_amount_change.words_amount_key] -= \
+            dialog_manager.dialog_data[self.words_amount_key] -= \
                 self.get_category_amount(dialog_manager)
 
     def getter(self, dialog_manager: DialogManager) -> dict[str, Any]:

@@ -14,6 +14,13 @@ from aiogram_dialog import DialogManager
 from middlewares import long_operation_action_middlware
 from keyboards import main_menu_reply_keyboard
 from handlers import settings_menu
+from db.mongo import mongo_db_manager
+
+from models import (
+    film_model, 
+    book_model, 
+    character_model, 
+    statement_model)
 
 from config_reader import config
 
@@ -23,6 +30,17 @@ router.callback_query.outer_middleware(
     long_operation_action_middlware.ChatActionMiddleware()
 )
 
+def _register_user(user_id: int) -> None:
+    mongo_db_manager.DBManager().insert_user(user_id)
+
+    for index, c in enumerate([
+        film_model.Film.AdditionalData.CATEGORY_NAME_ENG,
+        book_model.Book.AdditionalData.CATEGORY_NAME_ENG,
+        statement_model.Statement.AdditionalData.CATEGORY_NAME_ENG,
+        character_model.Character.AdditionalData.CATEGORY_NAME_ENG]):
+        category = mongo_db_manager.DBManager().get_category(c)
+        user = mongo_db_manager.DBManager().get_user(user_id)
+        mongo_db_manager.DBManager().insert_user_category(user, category, 2 if index < 3 else 0)
 
 def register_user(user_id: int) -> None:
     conn = sqlite3.connect(user_db_tables.user_db_path)
@@ -73,6 +91,7 @@ def register_user(user_id: int) -> None:
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
+    _register_user(message.from_user.id)
     register_user(message.from_user.id)
     await message.answer(
         text="Привет! Меня зовут Филипп, и я могу помочь тебе "

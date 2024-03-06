@@ -3,14 +3,13 @@ from typing import Dict, Any
 import sqlite3
 
 import categories
-from handlers.categories import (
+from handlers.categories_settings import (
     books_settings,
     films_settings,
     people_settings,
-    settings_category_amount_change,
     statements_settings
     )
-from handlers.categories.category_settings import CategorySettingsCreator, CategorySettings
+from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 from aiogram import Router
 from aiogram.fsm.state import State, StatesGroup
@@ -63,7 +62,7 @@ async def on_dialog_start(start_data: Any, dialog_manager: DialogManager):
         user_db_tables.UserCategoryTable.table_name,
     )
 
-    dialog_manager.dialog_data[settings_category_amount_change.words_amount_key] = 0
+    dialog_manager.dialog_data[CategorySettingsCreator.words_amount_key] = 0
 
     def get_user_category_info(
         row: dict[str, Any],
@@ -78,7 +77,7 @@ async def on_dialog_start(start_data: Any, dialog_manager: DialogManager):
         dialog_manager.dialog_data[amount_key] = \
             row[user_db_tables.UserCategoryTable.user_category_category_words_in_card_field_name]
         if dialog_manager.dialog_data[chosen_key]:
-            dialog_manager.dialog_data[settings_category_amount_change.words_amount_key] += \
+            dialog_manager.dialog_data[CategorySettingsCreator.words_amount_key] += \
                 dialog_manager.dialog_data[amount_key]
 
     for row in user_category_data:
@@ -123,8 +122,8 @@ async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     for category in categories:
         dialog_data.update(category.getter(dialog_manager))
     dialog_data.update({
-        settings_category_amount_change.words_amount_key: 
-        dialog_manager.dialog_data[settings_category_amount_change.words_amount_key]
+        CategorySettingsCreator.words_amount_key: 
+        dialog_manager.dialog_data[CategorySettingsCreator.words_amount_key]
         })
     return dialog_data
 
