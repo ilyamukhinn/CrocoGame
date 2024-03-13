@@ -1,4 +1,4 @@
-import categories
+from models import character_model
 from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 
@@ -15,12 +15,15 @@ class PeopleSettings(CategorySettings):
     people_amount_key = "people_amount"
     people_chosen_key = "people_chosen"
     people_no_chosen_key = "people_no_chosen"
+
+    def get_category_name_eng(self) -> str:
+        return character_model.Character.AdditionalData.CATEGORY_NAME_ENG
     
     def get_category_name_rus(self) -> str:
-        return categories.People.CATEGORY_NAME_RUS
+        return character_model.Character.AdditionalData.CATEGORY_NAME_RUS
     
     def get_category_icon(self) -> str:
-        return categories.People.ICON
+        return character_model.Character.AdditionalData.ICON
     
     def get_card_settings_check_btn_id(self):
         return self.PEOPLE_CARD_SETTINGS_CHECK_BTN_ID

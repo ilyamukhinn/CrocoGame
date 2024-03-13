@@ -33,11 +33,10 @@ class DBManager():
             except film_model.Film.DoesNotExist:
                 film_model.Film(name=f).save()
 
-    def get_films_sample(self, sample_size: int) -> None:
-        films = film_model.Film.objects.raw({}).aggregate(
+    def get_films_sample(self, sample_size: int) -> list[film_model.Film]:
+        return [film_model.Film(name=film['name']) for film in film_model.Film.objects.raw({}).aggregate(
             {"$sample": {"size": sample_size}}
-            )
-        print(list(films))
+            )]
 
     def create_books_collection(self) -> None:
         books_list: list[str]
@@ -49,6 +48,10 @@ class DBManager():
                 book_model.Book.objects.get({'name': f})
             except book_model.Book.DoesNotExist:
                 book_model.Book(name=f).save()
+    def get_books_sample(self, sample_size: int) -> list[any]:
+        return [book_model.Book(name=book['name']) for book in book_model.Book.objects.raw({}).aggregate(
+            {"$sample": {"size": sample_size}}
+            )]
 
     def create_characters_collection(self) -> None:
         characters_list: list[str]
@@ -60,6 +63,11 @@ class DBManager():
                 character_model.Character.objects.get({'name': f})
             except character_model.Character.DoesNotExist:
                 character_model.Character(name=f).save()
+    
+    def get_characters_sample(self, sample_size: int) -> list[any]:
+        return [character_model.Character(name=character['name']) for character in character_model.Character.objects.raw({}).aggregate(
+            {"$sample": {"size": sample_size}}
+            )]
 
     def create_statements_collection(self) -> None:
         statements_list: list[str]
@@ -71,6 +79,12 @@ class DBManager():
                 statement_model.Statement.objects.get({'name': f})
             except statement_model.Statement.DoesNotExist:
                 statement_model.Statement(name=f).save()
+        
+    def get_statements_sample(self, sample_size: int) -> list[any]:
+        return [statement_model.Statement(name=statement['name']) for statement in statement_model.Statement.objects.raw({}).aggregate(
+            {"$sample": {"size": sample_size}}
+            )]
+
 
     ######################################################
 
@@ -90,6 +104,12 @@ class DBManager():
             return category_model.Category.objects.get({'name': category_name})
         except category_model.Category.DoesNotExist:
             return None
+    
+    def get_all_categories(self) -> list[category_model.Category] | None:
+        try:
+            return list(category_model.Category.objects.raw({}))
+        except category_model.Category.DoesNotExist:
+            return None
 
     ######################################################
 
@@ -105,16 +125,26 @@ class DBManager():
         except user_model.User.DoesNotExist:
             user_model.User(user_id, roll_dice).save()
 
-    def update_user(self, user_id: int, roll_doce: bool) -> None:
-        user_model.User.objects.get({"_id": user_id}).update( # get -> raw
-            {"$set": {"roll_doce": roll_doce}}
+    def update_user(self, user_id: int, roll_dice: bool) -> None:
+        user_model.User.objects.raw({"_id": user_id}).update( # get -> raw
+            {"$set": {"roll_dice": roll_dice}}
         )
+
+    def remove_user(self, user_id: int) -> None:
+        user = self.get_user(user_id)
+        user.delete()
 
     ######################################################
 
     def get_user_category(self, user: user_model.User, category: category_model.Category) -> user_category_model.UserCategory | None:
         try:
             return user_category_model.UserCategory.objects.get({'user': user.pk, 'category': category.pk})
+        except user_category_model.UserCategory.DoesNotExist:
+            return None
+        
+    def get_user_categories(self, user_id: int) -> list[user_category_model.UserCategory] | None:
+        try:
+            return list(user_category_model.UserCategory.objects.raw({'user': user_id}))
         except user_category_model.UserCategory.DoesNotExist:
             return None
 

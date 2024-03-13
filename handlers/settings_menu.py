@@ -1,6 +1,6 @@
 import asyncio
 from typing import Dict, Any
-import sqlite3
+from db.mongo import mongo_db_manager
 
 from aiogram import Router
 from aiogram.fsm.state import State, StatesGroup
@@ -10,7 +10,6 @@ from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram_dialog.widgets.text import Const
 from aiogram_dialog.widgets.kbd import Button, Checkbox, Start, Row, Cancel
 
-from db import main_db_interface, user_db_tables
 from handlers import card_settings_menu
 
 router = Router()
@@ -27,20 +26,10 @@ SAVE_SETTINGS_BTN_ID = "save_settings"
 
 
 async def on_dialog_start(start_data: Any, dialog_manager: DialogManager):
-    conn = sqlite3.connect(user_db_tables.user_db_path)
-    user_data = main_db_interface.DBInterface.select_record(
-        conn,
-        user_db_tables.UserTable.user_id_field_name,
-        dialog_manager.event.from_user.id,
-        user_db_tables.UserTable.table_name,
-    )
+    user = mongo_db_manager.DBManager().get_user(dialog_manager.event.from_user.id)
 
-    dialog_manager.dialog_data["roll_dice"] = (
-        bool(user_data["roll_dice"]) if user_data else False
-    )
-    dialog_manager.dialog_data["no_roll_dice"] = not dialog_manager.dialog_data[
-        "roll_dice"
-    ]
+    dialog_manager.dialog_data["roll_dice"] = user.roll_dice
+    dialog_manager.dialog_data["no_roll_dice"] = not user.roll_dice
 
 
 async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
@@ -53,15 +42,8 @@ async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
 async def save_main_settings(
     callback: types.CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
-    conn = sqlite3.connect(user_db_tables.user_db_path)
-    main_db_interface.DBInterface.update_record(
-        conn,
-        user_db_tables.UserTable.user_id_field_name,
-        callback.from_user.id,
-        [user_db_tables.UserTable.dice_field_name],
-        [1 if dialog_manager.find(ROLL_DICE_BTN_ID).is_checked() else 0],
-        user_db_tables.UserTable.table_name,
-    )
+    mongo_db_manager.DBManager().update_user(callback.from_user.id, 
+                                             dialog_manager.find(ROLL_DICE_BTN_ID).is_checked())
     dump = await callback.message.answer("Настройки сохранены!")
     await callback.answer()
 
@@ -76,14 +58,14 @@ settings = Dialog(
         Const("Настройки"),
         Checkbox(
             checked_text=Const("[✓] Бросать кубик 🎲"),
-            unchecked_text=Const("[] Бросать кубик 🎲"),
+            unchecked_text=Const("[✗] Бросать кубик 🎲"),
             id=ROLL_DICE_BTN_ID,
             default=True,
             when="roll_dice",
         ),
         Checkbox(
             checked_text=Const("[✓] Бросать кубик 🎲"),
-            unchecked_text=Const("[] Бросать кубик 🎲"),
+            unchecked_text=Const("[✗] Бросать кубик 🎲"),
             id=ROLL_DICE_BTN_ID,
             default=False,
             when="no_roll_dice",

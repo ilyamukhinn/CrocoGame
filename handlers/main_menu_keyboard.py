@@ -1,9 +1,4 @@
-import sqlite3
-
 import card
-import categories
-from db import main_db_interface
-from db import user_db_tables
 
 from aiogram import Router, types, F
 from aiogram.filters.command import Command
@@ -30,7 +25,7 @@ router.callback_query.outer_middleware(
     long_operation_action_middlware.ChatActionMiddleware()
 )
 
-def _register_user(user_id: int) -> None:
+def register_user(user_id: int) -> None:
     mongo_db_manager.DBManager().insert_user(user_id)
 
     for index, c in enumerate([
@@ -42,56 +37,9 @@ def _register_user(user_id: int) -> None:
         user = mongo_db_manager.DBManager().get_user(user_id)
         mongo_db_manager.DBManager().insert_user_category(user, category, 2 if index < 3 else 0)
 
-def register_user(user_id: int) -> None:
-    conn = sqlite3.connect(user_db_tables.user_db_path)
-    if main_db_interface.DBInterface.record_exists(
-        conn,
-        user_db_tables.UserTable.user_id_field_name,
-        user_id,
-        user_db_tables.UserTable.table_name,
-    ):
-        print("User exists")
-    else:
-        main_db_interface.DBInterface.create_record(
-            conn,
-            user_db_tables.UserTable.fields_names_list,
-            [
-                user_id,
-                card.Card.BASE_CARD_SETTINGS[card.Card.roll_dice_field_name],
-                card.Card.BASE_CARD_SETTINGS[card.Card.words_in_card_field_name],
-            ],
-            user_db_tables.UserTable.table_name,
-        )
-
-        for count, (category, id) in enumerate(
-            user_db_tables.CategoryTable.base_data.items()
-        ):
-            if count < 6:
-                category_chosen: bool = card.Card.BASE_CARD_SETTINGS[
-                    card.Card.categories_field_name
-                ][category][card.Card.category_chosen_field_name]
-                main_db_interface.DBInterface.create_record(
-                    conn,
-                    user_db_tables.UserCategoryTable.fields_names_list,
-                    [
-                        user_id,
-                        id,
-                        1 if category_chosen else 0,
-                        (
-                            card.Card.BASE_CARD_SETTINGS[
-                                card.Card.categories_field_name
-                            ][category][card.Card.category_words_in_card_field_name]
-                            if category_chosen
-                            else 0
-                        ),
-                    ],
-                    user_db_tables.UserCategoryTable.table_name,
-                )
-
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
-    _register_user(message.from_user.id)
     register_user(message.from_user.id)
     await message.answer(
         text="Привет! Меня зовут Филипп, и я могу помочь тебе "
@@ -111,23 +59,11 @@ async def cmd_start(message: types.Message):
 )
 @router.message(Command("get_card"), flags={"long_operation": "typing"})
 async def cmd_get_game_card(
-    message: types.Message,
-    films: categories.Films,
-    people: categories.People,
-    books: categories.Books,
-    statements: categories.Statements
+    message: types.Message
 ):
-    card_data: dict[str, any] = card.Card.generate_card(
-        message.from_user.id,
-        {
-            films.CATEGORY_NAME_ENG: films,
-            people.CATEGORY_NAME_ENG: people,
-            books.CATEGORY_NAME_ENG: books,
-            statements.CATEGORY_NAME_ENG: statements,
-        },
-    )
-    await message.answer(text=card_data[card.Card.card_text_field_name])
-    if card_data[user_db_tables.UserTable.dice_field_name]:
+    card_data_text, roll_dice = card.card().gen_game_card(message.from_user.id)
+    await message.answer(text=card_data_text)
+    if roll_dice:
         await message.answer_dice(emoji=DiceEmoji.DICE)
 
 

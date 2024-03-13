@@ -1,4 +1,4 @@
-import categories
+from models import statement_model
 from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 
@@ -16,11 +16,14 @@ class StatementsSettings(CategorySettings):
     statements_chosen_key = "statements_chosen"
     statements_no_chosen_key = "statements_no_chosen"
     
+    def get_category_name_eng(self) -> str:
+        return statement_model.Statement.AdditionalData.CATEGORY_NAME_ENG
+
     def get_category_name_rus(self) -> str:
-        return categories.Statements.CATEGORY_NAME_RUS
+        return statement_model.Statement.AdditionalData.CATEGORY_NAME_RUS
     
     def get_category_icon(self) -> str:
-        return categories.Statements.ICON
+        return statement_model.Statement.AdditionalData.ICON
     
     def get_card_settings_check_btn_id(self):
         return self.STATEMENTS_CARD_SETTINGS_CHECK_BTN_ID

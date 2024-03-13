@@ -1,128 +1,127 @@
-import categories
-import sqlite3
+from abc import ABC, abstractmethod
 import random
 
-from db import main_db_interface, user_db_tables
+from db.mongo import mongo_db_manager
+from models import (
+    film_model, 
+    book_model, 
+    character_model, 
+    statement_model)
+
+class Component(ABC):
+    @abstractmethod
+    def get_category_sample(self, counter: int = 0) -> str:
+        pass
 
 
-def generate_text(
-    data: dict[categories.categories_types, int],
-    categories_objects: dict[str, categories.categories_types],
-) -> str:
-    card: str = ""
-    counter: int = 0
+class BaseComponent(Component):
+    def get_category_sample(self, counter: int = 0) -> str:
+        return ""
 
-    def add_card_info(
-        data: dict[categories.categories_types, list[str]],
-        category: categories.categories_types,
-        counter: int,
-        card: str,
-    ) -> dict[str, any]:
-        if data[category]:
-            card += " ".join([category.ICON, category.CATEGORY_NAME_RUS, "\n"])
 
-        for word in data[category]:
+class Decorator(Component):
+    _component: Component = None
+    _sample_size: int = None
+
+    def __init__(self, component: Component, sample_size: int) -> None:
+        self._component = component
+        self._sample_size = sample_size
+
+    @property
+    def component(self) -> Component:
+        return self._component
+    
+    @property
+    def sample_size(self) -> int:
+        return self._sample_size
+
+    def get_category_sample(self, counter: int = 0) -> str:
+        return self._component.get_category_sample(counter)
+
+
+class FilmsDecorator(Decorator):
+    def get_category_sample(self, counter: int = 0) -> str:
+        category_desc = " ".join([film_model.Film.AdditionalData.ICON, 
+                                  film_model.Film.AdditionalData.CATEGORY_NAME_RUS, "\n"])
+
+        for film in mongo_db_manager.DBManager().get_films_sample(self.sample_size):
             counter += 1
-            card += "({}) ".format(counter) + " ".join([word, "\n"])
-
-        return dict({"card": card, "counter": counter})
-
-    for category, sample_size in sorted(data.items(), key=lambda x: random.random()):
-        match category:
-            case categories.Films:
-                data[category] = categories_objects[
-                    categories.Films.CATEGORY_NAME_ENG
-                ].get_films_sample(sample_size)
-
-            case categories.People:
-                data[category] = categories_objects[
-                    categories.People.CATEGORY_NAME_ENG
-                ].get_people_sample(sample_size)
-
-            case categories.Books:
-                data[category] = categories_objects[
-                    categories.Books.CATEGORY_NAME_ENG
-                ].get_books_sample(sample_size)
-
-            case categories.Statements:
-                data[category] = categories_objects[
-                    categories.Statements.CATEGORY_NAME_ENG
-                ].get_statements_sample(sample_size)
-
-        result: dict[str, any] = add_card_info(data, category, counter, card)
-        card = result["card"]
-        counter = result["counter"]
-
-    return card
+            category_desc += "({}) ".format(counter) + " ".join([film.name, "\n"])
+        
+        return "".join([category_desc, self.component.get_category_sample(counter)])
 
 
-def generate_card(
-    id_user: int, categories_objects: dict[str, categories.categories_types]
-) -> dict[str, any]:
-    conn = sqlite3.connect(user_db_tables.user_db_path)
-    data = main_db_interface.DBInterface.select_record(
-        conn,
-        user_db_tables.UserTable.user_id_field_name,
-        id_user,
-        user_db_tables.UserTable.table_name,
-    )
-    user_categories_data = main_db_interface.DBInterface.select_records(
-        conn,
-        user_db_tables.UserTable.user_id_field_name,
-        id_user,
-        user_db_tables.UserCategoryTable.table_name,
-    )
+class BooksDecorator(Decorator):
+    def get_category_sample(self, counter: int = 0) -> str:
+        category_desc = " ".join([book_model.Book.AdditionalData.ICON, 
+                                  book_model.Book.AdditionalData.CATEGORY_NAME_RUS, "\n"])
 
-    input_generate_text_data: dict[categories.categories_types, list[str]] = {}
-    for row in user_categories_data:
-        category = user_db_tables.CategoryTable.base_data_inverted.get(
-            row[user_db_tables.UserCategoryTable.user_category_category_id_field_name],
-            0,
-        )
-        if category:
-            input_generate_text_data[category] = row[
-                user_db_tables.UserCategoryTable.user_category_category_words_in_card_field_name
-            ]
+        for book in mongo_db_manager.DBManager().get_books_sample(self.sample_size):
+            counter += 1
+            category_desc += "({}) ".format(counter) + " ".join([book.name, "\n"])
+        
+        return "".join([category_desc, self.component.get_category_sample(counter)])
+    
+class CharacterDecorator(Decorator):
+    def get_category_sample(self, counter: int = 0) -> str:
+        category_desc = " ".join([character_model.Character.AdditionalData.ICON, 
+                                  character_model.Character.AdditionalData.CATEGORY_NAME_RUS, "\n"])
 
-    card_text: str = generate_text(input_generate_text_data, categories_objects)
-    data[Card.card_text_field_name] = card_text
-    return data
+        for character in mongo_db_manager.DBManager().get_characters_sample(self.sample_size):
+            counter += 1
+            category_desc += "({}) ".format(counter) + " ".join([character.name, "\n"])
+        
+        return "".join([category_desc, self.component.get_category_sample(counter)])
 
 
-class Card:
-    card_text_field_name: str = "card_text"
+class StatementsDecorator(Decorator):
+    def get_category_sample(self, counter: int = 0) -> str:
+        category_desc = " ".join([statement_model.Statement.AdditionalData.ICON, 
+                                  statement_model.Statement.AdditionalData.CATEGORY_NAME_RUS, "\n"])
 
-    words_in_card_field_name: str = "words_in_card"
-    words_in_card_field_value: int = 6
-    categories_field_name: str = "categories"
+        for statement in mongo_db_manager.DBManager().get_statements_sample(self.sample_size):
+            counter += 1
+            category_desc += "({}) ".format(counter) + " ".join([statement.name, "\n"])
+        
+        return "".join([category_desc, self.component.get_category_sample(counter)])
 
-    category_chosen_field_name: str = "chosen"
-    category_words_in_card_field_name: str = "words_in_card"
-    categories_field_values: dict[categories.categories_types, dict[str, int]] = {
-        categories.Films: {
-            category_chosen_field_name: True,
-            category_words_in_card_field_name: 2,
-        },
-        categories.People: {
-            category_chosen_field_name: True,
-            category_words_in_card_field_name: 2,
-        },
-        categories.Books: {
-            category_chosen_field_name: True,
-            category_words_in_card_field_name: 2,
-        },
-        categories.Statements: {
-            category_chosen_field_name: False,
-            category_words_in_card_field_name: 0,
-        },
-    }
-    roll_dice_field_name: str = "roll_dice"
-    roll_dice_field_value: int = 1
 
-    BASE_CARD_SETTINGS: dict[str, any] = {
-        words_in_card_field_name: words_in_card_field_value,
-        roll_dice_field_name: roll_dice_field_value,
-        categories_field_name: categories_field_values,
-    }
+class card():
+    _categories_info: dict[str: int] = None
+    _roll_dice: int = None
 
-    generate_card = staticmethod(generate_card)
+    @property
+    def categories_info(self) -> dict[str: int]:
+        return self._categories_info
+    
+    @property
+    def roll_dice(self) -> int:
+        return self._roll_dice
+
+    def gen_game_card(self, user_id: int) -> tuple[str, int]:
+        self._categories_info, self._roll_dice = self._get_user_info(user_id)
+        base_component: BaseComponent = BaseComponent()
+        latest_decorator: Decorator = Decorator(base_component, 0)
+
+        for category_type, words_amount in sorted(self.categories_info.items(), key=lambda x: random.random()):
+            if words_amount == 0:
+                continue
+            match category_type:
+                case film_model.Film.AdditionalData.CATEGORY_NAME_ENG:
+                    latest_decorator = FilmsDecorator(latest_decorator, words_amount)
+                case book_model.Book.AdditionalData.CATEGORY_NAME_ENG:
+                    latest_decorator = BooksDecorator(latest_decorator, words_amount)
+                case character_model.Character.AdditionalData.CATEGORY_NAME_ENG:
+                    latest_decorator = CharacterDecorator(latest_decorator, words_amount)
+                case statement_model.Statement.AdditionalData.CATEGORY_NAME_ENG:
+                    latest_decorator = StatementsDecorator(latest_decorator, words_amount)
+
+        return latest_decorator.get_category_sample(), self.roll_dice
+
+    def _get_user_info(self, user_id: int) -> tuple[dict[str: int], int]:
+        user_categories = mongo_db_manager.DBManager().get_user_categories(user_id)
+        return {user_category.category.name: user_category.amount for user_category in user_categories}, 1
+
+if __name__ == "__main__":
+    for item in card().gen_game_card(379340519):
+        print(item)

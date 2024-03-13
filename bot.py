@@ -1,10 +1,6 @@
 import asyncio
 import logging
-import sqlite3
-import os
 
-import categories
-from db import main_db_interface, user_db_tables
 from db.mongo import mongo_db_manager
 
 from handlers import (
@@ -24,41 +20,14 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp["films"] = categories.Films()
-dp["people"] = categories.People()
-dp["books"] = categories.Books()
-dp["statements"] = categories.Statements()
 
-def _create_db() -> None:
+def create_db() -> None:
     mongo_db_manager.DBManager().create_films_collection()
     mongo_db_manager.DBManager().create_books_collection()
     mongo_db_manager.DBManager().create_statements_collection()
     mongo_db_manager.DBManager().create_characters_collection()
 
     mongo_db_manager.DBManager().create_categories_collection()
-    mongo_db_manager.DBManager().get_films_sample(3)
-    
-
-def create_db() -> None:
-    conn = sqlite3.connect(user_db_tables.user_db_path)
-
-    for table_name, fields in user_db_tables.user_db_tables_full_info.items():
-        if main_db_interface.DBInterface.table_exists(conn, table_name):
-            print("Table exists")
-        else:
-            main_db_interface.DBInterface.create_talbe(conn, fields, table_name)
-
-            if table_name == user_db_tables.CategoryTable.table_name:
-                for category_name, id in user_db_tables.CategoryTable.base_data.items():
-                    main_db_interface.DBInterface.create_record(
-                        conn,
-                        [
-                            user_db_tables.CategoryTable.category_id_field_name,
-                            user_db_tables.CategoryTable.category_name_field_name,
-                        ],
-                        [id, "'{}'".format(category_name.CATEGORY_NAME_ENG)],
-                        user_db_tables.CategoryTable.table_name,
-                    )
 
 
 async def setup_bot_commands():
@@ -127,6 +96,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    _create_db()
     create_db()
     asyncio.run(main())

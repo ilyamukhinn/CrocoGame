@@ -1,4 +1,4 @@
-import categories
+from models import film_model
 from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 class FilmsSettingsCreator(CategorySettingsCreator):
@@ -15,11 +15,14 @@ class FilmsSettings(CategorySettings):
     films_chosen_key = "films_chosen"
     films_no_chosen_key = "films_no_chosen"
 
+    def get_category_name_eng(self) -> str:
+        return film_model.Film.AdditionalData.CATEGORY_NAME_ENG
+
     def get_category_name_rus(self) -> str:
-        return categories.Films.CATEGORY_NAME_RUS
+        return film_model.Film.AdditionalData.CATEGORY_NAME_RUS
     
     def get_category_icon(self) -> str:
-        return categories.Films.ICON
+        return film_model.Film.AdditionalData.ICON
 
     def get_card_settings_check_btn_id(self) -> str:
         return self.FILMS_CARD_SETTINGS_CHECK_BTN_ID

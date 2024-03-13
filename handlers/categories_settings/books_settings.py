@@ -1,4 +1,4 @@
-import categories
+from models import book_model
 from handlers.categories_settings.category_settings import CategorySettingsCreator, CategorySettings
 
 class BooksSettingsCreator(CategorySettingsCreator):
@@ -16,11 +16,14 @@ class BooksSettings(CategorySettings):
     books_chosen_key = "books_chosen"
     books_no_chosen_key = "books_no_chosen"
     
+    def get_category_name_eng(self) -> str:
+        return book_model.Book.AdditionalData.CATEGORY_NAME_ENG
+
     def get_category_name_rus(self) -> str:
-        return categories.Books.CATEGORY_NAME_RUS
+        return book_model.Book.AdditionalData.CATEGORY_NAME_RUS
     
     def get_category_icon(self) -> str:
-        return categories.Books.ICON
+        return book_model.Book.AdditionalData.ICON
     
     def get_card_settings_check_btn_id(self):
         return self.BOOKS_CARD_SETTINGS_CHECK_BTN_ID

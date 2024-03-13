@@ -103,6 +103,9 @@ class CategorySettingsCreator(ABC):
             Button(text=Const("+"), id=category.get_plus_btn_id(), on_click=self.category_amount_changed)
         ]
     
+    def get_category_name_eng(self) -> str:
+        return self.factory_method().get_category_name_eng()
+    
     def get_category_name_rus(self) -> str:
         return self.factory_method().get_category_name_rus()
     
@@ -131,6 +134,10 @@ class CategorySettingsCreator(ABC):
         return self.factory_method().get_no_chosen_key()
 
 class CategorySettings(ABC):
+    @abstractmethod
+    def get_category_name_eng(self) -> str:
+        pass
+
     @abstractmethod
     def get_category_name_rus(self) -> str:
         pass
