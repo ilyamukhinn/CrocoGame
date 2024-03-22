@@ -41,45 +41,6 @@ async def setup_bot_commands():
     ]
     await bot.set_my_commands(bot_commands)
 
-PRICE = types.LabeledPrice(label="На пиццу", amount=100*100)  # в копейках (руб)
-
-@dp.message(F.text.lower() == "поддержите разработчиков 💰")
-@dp.message(Command("donate"))
-async def cmd_donate(message: types.Message):
-    if config.payments_token.get_secret_value().split(':')[1] == 'TEST':
-        await bot.send_message(chat_id=message.chat.id, text="Тестовый платеж!")
-
-    await bot.send_invoice(message.chat.id,
-                           title="Поддержка разработчиков",
-                           description="Спасибо, что неравнодушны к этому проекту!",
-                           provider_token=config.payments_token.get_secret_value(),
-                           currency="rub",
-                           photo_url="https://sun1-93.userapi.com/s/v1/ig2/BwKnuY9jbroEehJfHb5SxSlV2TMXYtbXBuPnp2dtg1BayC9lnxacooevC3zQ2S_FpVvbPXzMGrE4nO0poI1X0IDK.jpg?size=898x898&quality=96&crop=1,0,898,898&ava=1",
-                           photo_width=416,
-                           photo_height=400,
-                           photo_size=416,
-                           is_flexible=False,
-                           prices=[PRICE],
-                           start_parameter="pizza-support",
-                           payload="test-invoice-payload")
-
-# pre checkout  (must be answered in 10 seconds)
-@dp.pre_checkout_query(lambda query: True)
-async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
-    await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
-
-
-# successful payment
-@dp.message(F.content_type == ContentType.SUCCESSFUL_PAYMENT)
-async def successful_payment(message: types.Message):
-    print("SUCCESSFUL PAYMENT:")
-    payment_info = message.successful_payment.to_python()
-    for k, v in payment_info.items():
-        print(f"{k} = {v}")
-
-    await bot.send_message(message.chat.id,
-                           f"Платеж на сумму {message.successful_payment.total_amount // 100} {message.successful_payment.currency} прошел успешно!")
-
 async def main():
     dp.startup.register(setup_bot_commands)
     dp.include_routers(
