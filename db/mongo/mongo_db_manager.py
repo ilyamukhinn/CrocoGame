@@ -1,4 +1,4 @@
-from pymodm import connect
+from pymodm import connect, errors
 from config_reader import config
 from models import (
     film_model, 
@@ -18,7 +18,10 @@ class DBManager():
 
 
     def init(self):
-        connect(config.mongo_url.get_secret_value())
+        try:
+            connect(config.mongo_url.get_secret_value())
+        except errors.ConnectionError as e:
+            print("Error connecting to the database: {e}")
 
     ######################################################
 
